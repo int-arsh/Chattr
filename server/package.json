@@ -1,0 +1,21 @@
+{
+  "name": "server",
+  "module": "index.js",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "nodemon": "^3.1.10"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  },
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "bun run index.js"
+  }
+}
