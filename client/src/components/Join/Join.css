@@ -25,7 +25,7 @@ html, body {
   width: 20%;
 }
 
-.joinInput {
+.joinInput, .roomInput {
   border-radius: 0;
   padding: 15px 20px;
   width: 100%;

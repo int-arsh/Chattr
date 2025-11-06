@@ -1,6 +1,7 @@
 import {Server} from "socket.io";
 import { createServer } from "http";
 import express from "express";
+import cors from "cors";
 
 import { addUser, removeUser, getUser, getUsersInRoom } from './users.js';
 
@@ -57,11 +58,23 @@ io.on('connection', (socket) => {
         
         // Find the user who sent the message
         const user = getUser(socket.id);
+        
+        if (!user) {
+            return callback({ error: 'User not found' });
+        }
+        
+        // Validate message
+        if (!message || message.trim().length === 0) {
+            return callback({ error: 'Message cannot be empty' });
+        }
+        
+        if (message.length > 1000) {
+            return callback({ error: 'Message too long (max 1000 characters)' });
+        }
 
         // Broadcast message to everyone in the room
-        io.to(user.room).emit('message', { user: user.name, text: message});
+        io.to(user.room).emit('message', { user: user.name, text: message.trim()});
         io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room)});
-
 
         // Acknowledge message was sent
         // Calls the callback function to tell the client "message sent successfully"
@@ -80,5 +93,6 @@ io.on('connection', (socket) => {
 });
 
 app.use(router);
+app.use(cors());
 
 server.listen(PORT, () => console.log(`Server has started on port ${PORT}`));

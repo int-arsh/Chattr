@@ -17,8 +17,9 @@ const Chat = () => {
 
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
+    const [isConnected, setIsConnected] = useState(false);
 
-    const ENDPOINT = 'http://localhost:5000';
+    const ENDPOINT = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
 
     
     
@@ -27,6 +28,7 @@ const Chat = () => {
 
         if (!name || !room) {
             alert("Name and room are required!");
+            window.location.href = '/';
             return;
         }
         
@@ -36,7 +38,12 @@ const Chat = () => {
         setRoom(room);
 
         socket.emit('join', { name, room }, (response) => {
-            if (response?.error) alert(response.error);
+            if (response?.error) {
+                alert(response.error);
+                window.location.href = '/';
+            } else {
+                setIsConnected(true);
+            }
         });
 
         return () => {
@@ -48,9 +55,13 @@ const Chat = () => {
 
     useEffect(() => {
         socket.on('message', (message) => {
-            setMessages([...messages, message]);
+            setMessages(prevMessages => [...prevMessages, message]);
         })
-    }, [messages]);
+        
+        return () => {
+            socket.off('message');
+        };
+    }, []);
 
     // function for sending msgs
     const sendMessage = e => {
@@ -61,8 +72,6 @@ const Chat = () => {
         }
     }
 
-    // debug
-    console.log(message, messages);
 
 
     return (

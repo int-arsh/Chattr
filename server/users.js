@@ -8,15 +8,13 @@ const addUser = ({ id, name, room}) => {
         user.room === room && user.name === name);
 
     if(existingUser){
-        return { error: 'Username already taken '}
+        return { error: 'Username already taken in this room' }
     }
 
     const user = {id, name, room};
-
     users.push(user);
 
     return { user };
-
 }
 
 const removeUser = (id) => {
