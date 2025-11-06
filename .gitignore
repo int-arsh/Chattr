@@ -34,3 +34,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ...existing code...
+.env
+.env.local
+.env.production

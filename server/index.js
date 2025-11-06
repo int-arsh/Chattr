@@ -4,20 +4,28 @@ import express from "express";
 import cors from "cors";
 
 import { addUser, removeUser, getUser, getUsersInRoom } from './users.js';
-
-const PORT = process.env.PORT || 5000;
-
 import router from './router.js';
+
+
 // import { callbackify } from "util";
 
 const app = express();
 const server = createServer(app);
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  methods: ["GET", "POST"],
+  credentials: true
+};
+
 const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
+
+// Apply CORS middleware BEFORE routes
+app.use(cors(corsOptions));
+app.use(router);
 
 //  fires when someone connects
 io.on('connection', (socket) => {
@@ -25,18 +33,31 @@ io.on('connection', (socket) => {
 
     //  fires when that specific user joins a room
     socket.on('join', ({ name, room}, callback) => {
-        // console.log(name, room);
-        // const error = true;
-        // if(error) {
-        //     callback({ error: 'error'});
-        // }
+        // Validate inputs
+        if (!name || !room || typeof name !== 'string' || typeof room !== 'string') {
+            return callback({ error: 'Invalid name or room' });
+        }
+        
+        name = name.trim();
+        room = room.trim();
+        
+        if (name.length === 0 || room.length === 0) {
+        return callback({ error: 'Name and room are required' });
+        }
+        
+        if (name.length > 20 || room.length > 20) {
+        return callback({ error: 'Name and room must be less than 20 characters' });
+        }
 
         // Server adds user
         const { error, user} = addUser({id: socket.id, name, room});
 
         if(error) return callback(error);
-
+        
         // Server sends messages
+
+        // User joins Socket.IO room
+        socket.join(user.room);
 
         // Welcome message to the user
         socket.emit('message', { user: 'admin', text: `${user.name}, welcome to the room ${user.room}`});
@@ -44,9 +65,7 @@ io.on('connection', (socket) => {
         // Announcement to everyone else in room
         socket.broadcast.to(user.room).emit('message', { user: 'admin', text: `${user.name} has joined!`});
 
-        // User joins Socket.IO room
-        socket.join(user.room);
-
+        
         io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room)});
 
         // Callback called tells client "join successful"
@@ -84,15 +103,17 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         // console.log('User had left!!!');
         const user = removeUser(socket.id);
-
+        
         if(user){
             io.to(user.room).emit('message', { user: 'admin', text: `${user.name} has left.`});
+            io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room) });
         }
     })
 
 });
 
-app.use(router);
-app.use(cors());
+const PORT = process.env.PORT || 5000;
+
+
 
 server.listen(PORT, () => console.log(`Server has started on port ${PORT}`));

@@ -32,7 +32,12 @@ const Chat = () => {
             return;
         }
         
-        socket = io(ENDPOINT);
+        socket = io(ENDPOINT, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
 
         setName(name);
         setRoom(room);
@@ -78,8 +83,8 @@ const Chat = () => {
         <div className='outerContainer'>
             <div className='container'>
                 <InfoBar room = {room}/>
-                <Input message={message} setMessage={setMessage} sendMessage={sendMessage} />
                 <Messages messages={messages} name={name} />
+                <Input message={message} setMessage={setMessage} sendMessage={sendMessage} />
 
             </div>
         </div>
